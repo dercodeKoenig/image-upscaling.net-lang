@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description"
+          content="Entfernen Sie Hintergründe von Bildern mit diesem kostenlosen Tool. Erhalten Sie hochwertige, transparente Ausschnitte in Sekunden. Keine Abonnements, keine Anmeldung, keine Bezahlschranke.">
+    <meta name="og:title" content="Kostenloser KI-Hintergrundentferner | Keine Anmeldung, Keine Wasserzeichen"/>
+    <meta name="og:description" content="Entfernen Sie Hintergründe von Bildern sofort mit diesem kostenlosen KI-Tool!"/>
+    <meta name="og:image"
+          content="{{ url_for('static', filename='assets/images/logo.webp', _external=True) }}"/>
+
+    <title>Kostenloser KI-Hintergrundentferner | Keine Anmeldung, Keine Wasserzeichen</title>
+
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Inter+Tight:100,200,300,400,500,600,700,800,900&display=swap">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='checkbox.css') }}">
+</head>
+
+<body>
+
+<script>
+    const str_upload_btn = "hochladen";
+    const str_uploading_image = "Bild wird hochgeladen... warten Sie ein paar Sekunden!";
+    const str_image_too_large = "Bildgröße zu groß!";
+
+    const refresh_rate = "{{refresh_rate}}";
+    const default_image_src = "{{ url_for('static', filename='assets/images/logo.webp') }}";
+    const upload_src = "{{ url_for('removebg.removebg_upload') }}";
+    const get_images_src = "{{ url_for('removebg.removebg_get_status') }}";
+    const image_max_size = "{{ image_max_size }}";
+    const image_view_url = "{{ url_for('routes.image_view') }}";
+</script>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-removebg").classList.add("active");
+</script>
+
+
+<div class="container mt-5 mb-5">
+    <div class="row align-items-center">
+        <!-- Links: Bildvorschau -->
+        <div class="col-lg-6 text-center mb-4 mb-lg-0 order-lg-2">
+            <img id="imagePreview" src="{{ url_for('static', filename='assets/images/logo.webp') }}"
+                 alt="Vorschaubild">
+        </div>
+        <!-- Rechts: Überschrift und Bedienelemente -->
+        <div class="col-lg-6 text-center order-lg-1">
+            <h1 id="headline"><strong>KI-Hintergrund-entferner</strong></h1>
+            <!-- Aktionsschaltflächen -->
+            <div class="d-flex justify-content-center flex-wrap">
+                <a id="fileA" class="btn btn-custom btn-primary" onclick="selectfiles();">Bilder auswählen</a>
+                <a id="uploadA" class="btn btn-custom btn-outline-primary"
+                   onclick="document.getElementById('submit').click();"><span id="uploadbtntext">hochladen</span> (<span
+                        id="uploadnum">0</span>)</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display:none;">
+    <form id="uploadForm" onsubmit="submitForm(event)" enctype="multipart/form-data">
+        <input type="file" name="image" id="fileInput" accept="image/*" onchange="onFilesSelected(event)" multiple>
+        <input type="submit" id="submit" value="Bild hochladen" name="submit">
+    </form>
+</div>
+
+<div class="container">
+    <p style="display:none;" id="free_quota_exhausted_info">Tägliches kostenloses Kontingent erschöpft. Besuchen Sie <a
+            href="{{ url_for('account.account') }}">/account</a>, um mehr Kontingent zu erhalten</p>
+</div>
+
+
+<section id="gallery" class="mb-3">
+
+    <div class="container">
+
+        <div id="imagedata">
+
+
+            <div style="display:none;" class="mb-2" id="c3">
+                <h3>Verarbeitete Bilder:</h3>
+                <p>Bereit zum Download — Klicken Sie auf ein Bild, um es zu öffnen!<br>
+                    Hinweis: Ihre Bilder werden vom Server gelöscht, nachdem Sie sie geöffnet haben. Stellen Sie sicher, dass Sie sie speichern!
+                <div class="d-flex checkbox-wrapper" style="align-items:center;">
+                    <label class="form-check-label">Schnelldownload ohne Vorschau aktivieren: </label>
+                    <input id="quick_download_toggle" style="margin-left:10px;" type="checkbox" class="switch"
+                           onchange="reloadContent();">
+                </div>
+                </p>
+                <div class="gallery row" id="g3">
+                </div>
+            </div>
+
+            <div style="display:none;" class="mb-2" id="c1">
+                <h3>Bilder werden derzeit verarbeitet:</h3>
+                <p>Die Verarbeitung dauert etwa 10 Sekunden. Ihre Datei wird bald fertig sein! Schauen Sie gerne kurz später wieder vorbei!
+                    <br>Sie können auch unseren neuen <a href='https://discord.gg/utXujgAT8R'><strong>Discord</strong></a>
+                    besuchen oder die Zeit nutzen, um mir auf <a
+                            href='https://x.com/image_upscaling'><strong>Twitter</strong></a> zu folgen.</p>
+                <div class="gallery row" id="g1">
+                </div>
+            </div>
+
+            <div style="display:none;" class="mb-2" id="c2">
+                <h3>Bilder warten in der Warteschlange auf Verarbeitung:</h3>
+                <p>Die Hintergrundentfernung dauert Zeit und andere Bilder werden derzeit verarbeitet. Schauen Sie in 2 Minuten wieder vorbei
+                    - Sie müssen diesen Tab nicht offen lassen! <br>Sie können auch unseren neuen <a
+                            href='https://discord.gg/utXujgAT8R'><strong>Discord</strong></a> besuchen oder die Zeit nutzen, um
+                    mir auf <a href='https://x.com/image_upscaling'><strong>Twitter</strong></a> zu folgen.</p>
+                <div class="gallery row" id="g2">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+<div class="container mt-3">
+    <div id="donation_div" style="display:none;">
+        <h3>Dieser Hintergrundentferner ist kostenlos, aber der Betrieb ist es nicht.</h3>
+        <p>
+            Dieser Service läuft auf leistungsstarken Rechenservern — Spenden helfen dabei, sie für alle am Laufen zu halten.
+        </p>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+            <input type="hidden" name="cmd" value="_donations">
+            <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
+            <input type="hidden" name="item_name"
+                   value="Der Betrieb von KI-Modellen erfordert leistungsstarke Computer. Ihre Unterstützung hilft dabei, die Kosten zu decken, um das Projekt am Laufen zu halten!">
+            <input type="hidden" name="currency_code" value="EUR">
+            <input type="hidden" name="no_shipping" value="1">
+            <input type="hidden" name="custom" value="{{ client_id }}">
+            <input TYPE="hidden" NAME="return" value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="cancel_return"
+                   value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="notify_url"
+                   value="{{ url_for('ipn.paypal_ipn', _external=True, _scheme='https') }}">
+            <input style="width:200px;" type="image" name="submit"
+                   src="{{ url_for('static', filename='assets/images/paypal-donate-button.png') }}"
+                   alt="Spenden">
+            <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+
+        </form>
+        <div class="line-segment"></div>
+    </div>
+</div>
+<section>
+    <div class="container" id="howitworks">
+        <h2>Entfernen Sie Hintergründe von Ihren Bildern mit KI</h2>
+        <p>Laden Sie ein Bild hoch, um dessen Hintergrund mit KI entfernen zu lassen! Ihre verarbeiteten Bilder sind nur für Sie sichtbar und
+            werden einige Minuten nach der Verarbeitung gelöscht. Sie können Bilder mit bis zu 100MPx für hochwertige Hintergrundentfernung
+            hochladen. Beachten Sie, dass die Verarbeitung zu Spitzenzeiten einige Minuten dauern kann.</p>
+        <h3>Hauptmerkmale</h3>
+        <ul>
+            <li>Ergebnisse höchster Qualität</li>
+            <li>100% kostenlos für den kleinen Gebrauch — keine Bezahlschranke, keine Anmeldung. Ein tägliches kostenloses Kontingent gilt.</li>
+            <li>Unterstützung großer Bilder bis zu 10k*10k</li>
+            <li>Schnelle und benutzerfreundliche Oberfläche</li>
+
+
+        </ul>
+        <br>
+        <h2>Wie es funktioniert</h2>
+        <p>Die Nutzung dieser Website ist unglaublich einfach — und kostenlos:</p>
+        <ol>
+            <li><strong>Laden Sie Ihr Bild hoch:</strong>
+                Wählen Sie ein Bild von Ihrem Gerät aus. Bitte beachten Sie, dass die Bildgröße auf 100MPx begrenzt ist.
+            </li>
+            <li><strong>Verarbeitungszeit:</strong> Der Server beginnt mit der Bearbeitung Ihres Bildes. Dieser Prozess kann eine
+                Weile dauern, also
+                kommen Sie gerne später wieder. Ihr Bild wird gespeichert und zum Download bereit sein, sobald es fertig ist.<br>
+            </li>
+            <li><strong>Laden Sie Ihr verarbeitetes Bild herunter:</strong>
+                Kehren Sie nach einer Minute zur Website zurück, und Ihr verarbeitetes
+                Bild wartet in der Galerie auf Sie!
+            </li>
+        </ol>
+
+        <h2>Beispiele</h2>
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <img src="{{ url_for('static', filename='assets/images/example1.webp') }}"
+                     alt="Hintergrund entfernen Beispiel">
+            </div>
+            <div class="col-12 col-md-6">
+                <img src="{{ url_for('static', filename='assets/images/example1.webp') }}"
+                     alt="Hintergrund entfernen Beispiel">
+            </div>
+        </div>
+        <div class="line-segment"></div>
+
+        <div>
+            <h2>Datensicherheit und Urheberrecht</h2>
+            <ul>
+                <li>Ihre Bilder werden Ihnen über ein Cookie zugeordnet - eine 32-stellige hexadezimale Zeichenfolge, die zufällig generiert wird,
+                    wenn Sie die Seite zum ersten Mal besuchen. Nur mit diesem Cookie kann auf ein Bild zugegriffen werden.
+                </li>
+                <li>Ihre Bilder werden gespeichert, bis sie verarbeitet sind und einige zusätzliche Minuten, damit Sie sie herunterladen
+                    können.
+                </li>
+                <li>Ihre Bilder werden nicht in anderer Weise verwendet, außer verarbeitet und für kurze Zeit auf
+                    diesem Server gespeichert zu werden.
+                </li>
+                <li>Die Nutzung dieser Website gibt mir (dem Eigentümer) keine Rechte an Ihren Bildern - Sie sind weiterhin vollständiger Urheberrechtsinhaber.
+                <li>Die Bilder werden auf diesem Webserver in Deutschland gespeichert.</li>
+            </ul>
+        </div>
+
+    </div>
+</section>
+
+{% include 'footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='removebg.js', v='1.0') }}"></script>
+<script src="{{ url_for('static', filename='show_notification.js', v='1') }}"></script>
+
+{% include 'gtag.html' %}
+</body>
+
+</html>

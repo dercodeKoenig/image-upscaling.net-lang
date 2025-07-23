@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sua Conta</title>
+</head>
+<body>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-account").classList.add("active");
+</script>
+
+<div class="container">
+    <h1 class="mt-1 mb-1">Sua Conta</h1>
+    <div class="row">
+        <div class="col">
+            <strong>{{ link_response }}</strong>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <p><strong>E-mail:</strong> <span id="email_display">Carregando...</span></p>
+            <p><strong>ID do cliente:</strong> <span id="client_id_display">Carregando...</span></p>
+            <p><strong>Saldo:</strong> <span id="balance_display">Carregando...</span></p>
+            <p><strong>Créditos usados:</strong> <span id="free_quota_display">Carregando...</span></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <p>
+                Os serviços que oferecemos são <b>gratuitos</b>, e o limite diário ajuda a garantir o <b>acesso justo e
+                democrático para todos.</b>
+            </p>
+            <p><strong>Precisa de mais créditos?</strong><br>
+                Contribua com uma doação e receba <b>créditos extras</b> proporcionais ao valor doado (já com as taxas
+                descontadas).<br>
+                <i>(Paypal e Stripe combram taxas de transação).</i>
+            </p>
+
+
+            <p><strong>Como funciona?</strong><br>
+                Você recebe créditos diariamente. Os créditos pagos <b>só são usados quando os gratuitos esgotam.</b>
+                <br>
+                Mais informações sobre valores, descontos e cotas gratuitas podem ser encontradas <a
+                        href="{{ url_for('about') }}">aqui</a>.
+            </p>
+
+
+            <p><strong>Formas de pagamento:</strong><br>
+                &middot; Paypal<br>
+                &middot; Stripe (cartão de crédito)
+            </p>
+
+
+            <div class="row">
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                        <input type="hidden" name="cmd" value="_donations">
+                        <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
+                        <input type="hidden" name="item_name"
+                               value="Running AI models requires powerful computers. Your support helps cover costs to keep the project running!">
+                        <input type="hidden" name="currency_code" value="EUR">
+                        <input type="hidden" name="no_shipping" value="1">
+                        <input type="hidden" name="custom" value="{{ client_id }}">
+                        <input TYPE="hidden" NAME="return" value="{{ url_for('account.account', _external=True) }}">
+                        <input TYPE="hidden" NAME="cancel_return"
+                               value="{{ url_for('account.account', _external=True) }}">
+                        <input TYPE="hidden" NAME="notify_url"
+                               value="{{ url_for('ipn.paypal_ipn', _external=True, _scheme='https') }}">
+                        <input style="width:200px;" type="image" name="submit"
+                               src="{{ url_for('static', filename='assets/images/paypal-donate-button.png') }}"
+                               alt="Doar via Paypal">
+                        <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+                    </form>
+                </div>
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <form action="{{ url_for('account.stripe_pre_payment') }}" method="get" style="display: inline;">
+                        <button type="submit" class="btn btn-dark">Doar via Stripe
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <br>
+            <p>
+                <b>Seus créditos de doação são adicionados à sua conta em até um minuto — só aguardar &#128522;</b><br>
+                Você receberá um <b>e-mail de confirmação</b> com um link de login, que pode ser usado caso esteja
+                desconectado da sua conta.<br>
+                Se seu e-mail já estiver vinculado a outro <b>ID do cliente</b>, será necessário usar o link de login do
+                e-mail de confirmação <b>ou</b> o formulário abaixo<br> para reconectar sua conta com segurança.
+                &#128521;
+            </p>
+            <br>
+
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <strong>Seu endereço de e-mail:</strong><br>
+            <p id="email_connect_info_text"></p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('account.send_verification_mail') }}">
+        <div class="row">
+            <div class="col-9">
+                <input name="email" required type="email" placeholder="seuemail@exemplo.com" style="width:100%">
+            </div>
+            <div class="col-3">
+                <input type="submit">
+            </div>
+        </div>
+    </form>
+</div>
+
+</div>
+
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+{% include 'footer.html' %}
+{% include 'gtag.html' %}
+
+
+<script>
+    async function fetchAccountInfo() {
+        try {
+            const response = await fetch("{{ url_for('account.get_account_info') }}");
+            if (!response.ok) throw new Error('Ocorreu um erro na comunicação com nossos servidores.');
+            const data = await response.json();
+
+            document.getElementById('client_id_display').innerHTML = data.client_id || 'N/A';
+
+            document.getElementById('email_display').innerHTML = data.email || 'Nenhum e-mail foi conectado.';
+
+            const email_connect_info_text = document.getElementById('email_connect_info_text');
+            if (data.email) {
+                email_connect_info_text.innerHTML = 'Um e-mail já foi vinculado à sua conta. Você provavelmente não precisa usar este formulário.';
+            } else {
+                email_connect_info_text.innerHTML = 'Nenhum e-mail está conectado à sua conta no momento.';
+            }
+
+
+            document.getElementById('balance_display').innerHTML = data.balance || 0;
+
+            const maxFree = data.quota_free;
+            const quotaUsed = data.quota_used;
+            document.getElementById('free_quota_display').innerHTML = quotaUsed + ' de ' + maxFree;
+        } catch (err) {
+            console.error('Error fetching account info:', err);
+        }
+    }
+
+    // Initial fetch
+    fetchAccountInfo();
+    // Periodic update every x seconds
+    setInterval(fetchAccountInfo, parseInt("{{info_refresh_rate}}"));
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description"
+          content="Upscale your images online with this free AI tool. Scale images by 400% up to 16k! High-quality results, no subscriptions, no sign-up, no paywall, supports bulk upscaling, easy-to-use">
+    <meta name="og:title" content="Free AI Image Upscaler | No Sign-Up, No Watermarks, Up to 16K"/>
+    <meta name="og:description" content="Upscale your images online up to 4x using the free AI Image Enhancer!"/>
+    <meta name="og:image"
+          content="{{ url_for('static', filename='assets/images/logo.webp', _external=True) }}"/>
+
+    <title>Free AI Image Upscaler | No Sign-Up, No Watermarks, Up to 16K</title>
+
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Inter+Tight:100,200,300,400,500,600,700,800,900&display=swap">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='checkbox.css') }}">
+
+
+    <style>
+        .scale-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .scale-btn.disabled {
+            background-color: #000000;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<script>
+    const str_upload_btn = "upload";
+    const str_uploading_image = "uploading image... wait a few seconds!";
+    const str_image_too_large = "Image size too large!";
+
+    const refresh_rate = "{{refresh_rate}}";
+    const default_image_src = "{{ url_for('static', filename='assets/images/logo.webp') }}";
+    const upload_src = "{{ url_for('upscaling.upscaling_upload') }}";
+    const get_images_src = "{{ url_for('upscaling.upscaling_get_status') }}";
+    const image_max_size = "{{ image_max_size }}";
+    const image_view_url = "{{ url_for('routes.image_view') }}";
+</script>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-upscaling").classList.add("active");
+</script>
+
+<div class="container mt-5 mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6 text-center mb-4 mb-lg-0 order-lg-2">
+            <img id="imagePreview"
+                 src="{{ url_for('static', filename='assets/images/logo.webp') }}"
+                 alt="Upscaling Preview Image">
+        </div>
+        <div class="col-lg-6 text-center order-lg-1">
+            <h1 id="headline"><strong>AI Image Upscaler</strong></h1>
+
+            <div id="settings" style="display:none;">
+                <div id="scaleSettings" class="mb-3">
+                    <label class="form-label">Upscale Factor</label>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-outline-primary scale-btn" data-scale="1"
+                                onclick="updateScale(1)">1x
+                        </button>
+                        <button type="button" class="btn btn-outline-primary scale-btn" data-scale="2"
+                                onclick="updateScale(2)">2x
+                        </button>
+                        <button type="button" class="btn btn-outline-primary scale-btn" data-scale="4"
+                                onclick="updateScale(4)">4x
+                        </button>
+                    </div>
+                </div>
+
+                <div id="usefxsettings" class="mb-3">
+                    <div class="form-check form-switch d-flex justify-content-center checkbox-wrapper">
+                        <input id="s1-14" type="checkbox" class="switch" onchange="togglefx();">
+                        <label class="form-check-label" for="s1-14">use Face Restoration</label>
+                    </div>
+                    <p class="text-center">(try this option if your result has strange looking faces)</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center flex-wrap">
+                <a id="fileA" class="btn btn-custom btn-primary" onclick="selectfiles();">select images</a>
+                <a id="uploadA" class="btn btn-custom btn-outline-primary"
+                   onclick="document.getElementById('submit').click();"><span id="uploadbtntext">upload</span> (<span
+                        id="uploadnum">0</span>)</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display:none;">
+    <form id="uploadForm" onsubmit="submitForm(event)" enctype="multipart/form-data">
+        <input type="file" name="image" id="fileInput" accept="image/*" onchange="onFilesSelected(event)" multiple>
+        <input type="checkbox" id="fx" name="fx" value="yes">
+        <input type="number" id="scale" name="scale" min="1" max="4" value="2">
+        <input type="submit" id="submit" value="Upload Image" name="submit">
+    </form>
+</div>
+
+<div class="container">
+    <p style="display:none;" id="free_quota_exhausted_info">Daily free quota exhausted. Visit <a
+            href="{{ url_for('account.account') }}">/account</a> to get more quota</p>
+</div>
+
+
+<section id="gallery" class="mb-3">
+    <div class="container" id="imagedata">
+        <div style="display:none;" class="mb-2" id="c3">
+            <h3>High Resolution Upscaled Images:</h3>
+            <p>Ready for download — Click on an image to open it!<br>
+                Note: Your images will be deleted from the server after you open them so make sure you save them!
+
+            <div class="d-flex checkbox-wrapper" style="align-items:center;">
+                <label class="form-check-label">enable quick download without preview: </label>
+                <input id="quick_download_toggle" style="margin-left:10px;" type="checkbox" class="switch"
+                       onchange="reloadContent();">
+            </div>
+            </p>
+            <div class="gallery row" id="g3"></div>
+            <p><strong>Don’t forget to share our project with your friends and on social media 😊</strong></p>
+
+
+        </div>
+
+        <div style="display:none;" class="mb-2" id="c1">
+            <h3>Images currently being upscaled:</h3>
+            <p>
+                The high-quality processing takes only a few seconds. Your file will be ready soon! Feel free to check
+                back shortly! <br>You can also visit our new <a
+                    href='https://discord.gg/utXujgAT8R'><strong>discord</strong></a> or take the time to follow me on
+                <a href='https://x.com/image_upscaling'><strong>twitter</strong></a>.
+            </p>
+            <div class="gallery row" id="g1"></div>
+        </div>
+
+        <div style="display:none;" class="mb-2" id="c2">
+            <h3>Images waiting in line for high-quality upscaling:</h3>
+            <p>
+                High-quality upscaling takes time and other images are currently being processed. Check back in about 5
+                minutes - you do not need to keep this tab open! <br>You can also visit our new <a
+                    href='https://discord.gg/utXujgAT8R'><strong>discord</strong></a> or take the time to follow me on
+                <a href='https://x.com/image_upscaling'><strong>twitter</strong></a>.
+            </p>
+            <div class="gallery row" id="g2"></div>
+        </div>
+    </div>
+</section>
+
+<div class="container mt-3">
+    <div id="donation_div" style="display:none;">
+        <h3>This upscaler is free, but running it isn’t.</h3>
+        <p>
+            This service runs on powerful compute servers — donations help keep them running for everyone.
+        </p>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+            <input type="hidden" name="cmd" value="_donations">
+            <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
+            <input type="hidden" name="item_name"
+                   value="Running AI models requires powerful computers. Your support helps cover costs to keep the project running!">
+            <input type="hidden" name="currency_code" value="EUR">
+            <input type="hidden" name="no_shipping" value="1">
+            <input type="hidden" name="custom" value="{{ client_id }}">
+            <input TYPE="hidden" NAME="return" value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="cancel_return"
+                   value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="notify_url"
+                   value="{{ url_for('ipn.paypal_ipn', _external=True, _scheme='https') }}">
+            <input style="width:200px;" type="image" name="submit"
+                   src="{{ url_for('static', filename='assets/images/paypal-donate-button.png') }}"
+                   alt="Donate">
+            <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+
+        </form>
+        <div class="line-segment"></div>
+    </div>
+</div>
+<div class="container mt-3">
+    <h2>Enhance Your Images with AI Upscaling</h2>
+    <p>Upload an image to have it scaled up to 4x using AI! Images are only visible to you and will be deleted a few
+        minutes after processing. You can upload images up to a size of 16MPx to be scaled to 16k*16k. Note that in
+        times of high demand, it may take a few minutes for your images to be processed.</p>
+    <h2 id="keyfeatures">Key Features</h2>
+    <ul>
+        <li>Top quality results, especially for drawings, AI art, anime, (basically everything except faces)</li>
+        <li>100% free for small-scale use — no paywall, no sign-up. A daily free quota applies.</li>
+        <li><strong>Download as apk for Android</strong>: <a
+                href="https://play.google.com/store/apps/details?id=net.image_upscaling">here</a></li>
+        <li>Supports common image formats: PNG, JPG, WebP (animated formats like GIF are not supported)</li>
+        <li>Large image support up to 4096*4096</li>
+        <li>Scale image 4x using AI</li>
+        <li>Improve blurred / pixelated faces</li>
+        <li>Note: <strong>Faces will not always look similar to input images</strong></li>
+        <li>Supports bulk upscaling</li>
+        <li>Supports transparent images</li>
+        <li>Fast and user friendly interface</li>
+    </ul>
+</div>
+
+<br>
+
+<section>
+    <div class="container">
+        <h2 id="howitworks">How It Works</h2>
+        <p>Using this website is incredibly simple — and free:</p>
+        <ol>
+            <li><strong>Upload Your Image:</strong> Select an image from your device. Please note that the image
+                size is limited
+                to 16MPx. <br>
+                <ul>
+                    <li>for 4x: Images up to 2Mpx (2048*1024) can use the premium model for better results.
+                    </li>
+                    <li>for 2x: Images up to 8Mpx (2048*4096) can use the premium model for better results.
+                    </li>
+                </ul>
+            </li>
+            <li><strong>Processing:</strong>
+                The server will start working on your image. This process usually takes only a few seconds.
+                Your image will be saved and ready for download once it’s done.
+                This algorithm prioritizes <strong>quality over speed</strong>, so larger images may take longer to
+                process.
+            </li>
+
+
+            <li><strong>Download Your Upscaled Image:</strong>
+                Return to the site after a few minutes, and your high-resolution
+                image will be waiting for you in the gallery!
+            </li>
+            <li><strong>Cleaning Up:</strong> Your images will be deleted 30 minutes after processing to free up
+                space for new requests.
+            </li>
+
+        </ol>
+
+        <br>
+
+        <h2>Comparison Example:</h2>
+        <div class="row">
+            <div class="col-12 col-md-8 col-lg-6">
+                <img src="{{ url_for('static', filename='assets/images/compare2.jpg') }}"
+                     alt="upscaled image before and after comparison">
+            </div>
+        </div>
+
+
+        <p>Incredible — isn’t it? You can try this out right now for free here!</p>
+        <a class="btn btn-primary btn-custom mt-0 rounded-sm p-1" href="#"
+           onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
+            Enhance Your Images!
+        </a>
+
+        <br>
+        <br>
+
+
+        <h2>AI Upscaling vs. Traditional Scaling</h2>
+        <h3 style="font-size: unset;">AI Upscaling:</h3>
+        <ul>
+            <li><strong>Enhanced Detail:</strong> AI technology analyzes and reconstructs finer details, resulting
+                in sharper
+                and more vibrant images.
+            </li>
+            <li><strong>Preserved Quality:</strong> Unlike traditional methods, AI upscaling maintains the integrity
+                of the
+                original image, avoiding pixelation and blurriness.
+            </li>
+        </ul>
+
+        <h3 style="font-size: unset;">Traditional Scaling:</h3>
+        <ul>
+            <li><strong>Loss of Detail:</strong> Standard scaling methods often lead to a loss of detail, making
+                images appear
+                blurry and pixelated.
+            </li>
+            <li><strong>Limited Enhancement:</strong> Traditional techniques can’t add new details, limiting the
+                quality
+                improvement.
+            </li>
+        </ul>
+
+
+        <div class="line-segment"></div>
+
+
+        <div>
+            <h2>Data safety and copyright</h2>
+            <ul>
+                <li>Your images are matched to you using a cookie - a 32-character hexadecimal string randomly
+                    generated when
+                    you first visit the page. Only with this cookie can an image be accessed.
+                </li>
+                <li>Your images will be stored until they are processed and a few additional minutes for you to
+                    download them.
+                </li>
+                <li>Your images will not be used in any way other than being upscaled and stored for a short time on
+                    this server.
+                </li>
+                <li>Using this website gives me (the owner) no rights about your images - you are still full
+                    copyright holder.
+                </li>
+                <li>The images are stored on this web server in germany.</li>
+            </ul>
+        </div>
+    </div>
+    </div>
+</section>
+
+{% include 'footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='upscaling.js', v='2') }}"></script>
+<script src="{{ url_for('static', filename='show_notification.js', v='2') }}"></script>
+
+{% include 'gtag.html' %}
+</body>
+
+</html>

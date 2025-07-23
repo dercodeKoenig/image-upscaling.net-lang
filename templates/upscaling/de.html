@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description"
+          content="Skalieren Sie Ihre Bilder online mit diesem kostenlosen KI-Tool. Skalieren Sie Bilder um das 4-fache bis zu 16k! Hochwertige Ergebnisse, keine Abonnements, keine Anmeldung, keine Paywall, unterstützt Bulk-Skalierung, einfach zu bedienen">
+    <meta name="og:title" content="Kostenloser KI-Bild-Upscaler | Keine Anmeldung, Keine Wasserzeichen, bis zu 16K"/>
+    <meta name="og:description" content="Skalieren Sie Ihre Bilder online um das 4-fache mit dem kostenlosen KI-Bild-Enhancer!"/>
+    <meta name="og:image"
+          content="{{ url_for('static', filename='assets/images/logo.webp', _external=True) }}"/>
+
+    <title>Kostenloser KI-Bild-Upscaler | Keine Anmeldung, Keine Wasserzeichen, bis zu 16K</title>
+
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Inter+Tight:100,200,300,400,500,600,700,800,900&display=swap">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='checkbox.css') }}">
+
+
+    <style>
+        .scale-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .scale-btn.disabled {
+            background-color: #000000;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<script>
+    const str_upload_btn = "hochladen";
+    const str_uploading_image = "Bild wird hochgeladen... warten Sie ein paar Sekunden!";
+    const str_image_too_large = "Bildgröße zu groß!";
+
+    const refresh_rate = "{{refresh_rate}}";
+    const default_image_src = "{{ url_for('static', filename='assets/images/logo.webp') }}";
+    const upload_src = "{{ url_for('upscaling.upscaling_upload') }}";
+    const get_images_src = "{{ url_for('upscaling.upscaling_get_status') }}";
+    const image_max_size = "{{ image_max_size }}";
+    const image_view_url = "{{ url_for('routes.image_view') }}";
+</script>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-upscaling").classList.add("active");
+</script>
+
+<div class="container mt-5 mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6 text-center mb-4 mb-lg-0 order-lg-2">
+            <img id="imagePreview"
+                 src="{{ url_for('static', filename='assets/images/logo.webp') }}"
+                 alt="Upscaling Vorschaubild">
+        </div>
+        <div class="col-lg-6 text-center order-lg-1">
+            <h1 id="headline"><strong>KI-Bild-Upscaler</strong></h1>
+
+            <div id="settings" style="display:none;">
+                <div id="scaleSettings" class="mb-3">
+                    <label class="form-label">Skalierungsfaktor</label>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-outline-primary scale-btn" data-scale="1"
+                                onclick="updateScale(1)">1x
+                        </button>
+                        <button type="button" class="btn btn-outline-primary scale-btn" data-scale="2"
+                                onclick="updateScale(2)">2x
+                        </button>
+                        <button type="button" class="btn btn-outline-primary scale-btn" data-scale="4"
+                                onclick="updateScale(4)">4x
+                        </button>
+                    </div>
+                </div>
+
+                <div id="usefxsettings" class="mb-3">
+                    <div class="form-check form-switch d-flex justify-content-center checkbox-wrapper">
+                        <input id="s1-14" type="checkbox" class="switch" onchange="togglefx();">
+                        <label class="form-check-label" for="s1-14">Gesichtswiederherstellung verwenden</label>
+                    </div>
+                    <p class="text-center">(probieren Sie diese Option aus, wenn Ihr Ergebnis seltsam aussehende Gesichter hat)</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center flex-wrap">
+                <a id="fileA" class="btn btn-custom btn-primary" onclick="selectfiles();">Bilder auswählen</a>
+                <a id="uploadA" class="btn btn-custom btn-outline-primary"
+                   onclick="document.getElementById('submit').click();"><span id="uploadbtntext">hochladen</span> (<span
+                        id="uploadnum">0</span>)</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display:none;">
+    <form id="uploadForm" onsubmit="submitForm(event)" enctype="multipart/form-data">
+        <input type="file" name="image" id="fileInput" accept="image/*" onchange="onFilesSelected(event)" multiple>
+        <input type="checkbox" id="fx" name="fx" value="yes">
+        <input type="number" id="scale" name="scale" min="1" max="4" value="2">
+        <input type="submit" id="submit" value="Bild hochladen" name="submit">
+    </form>
+</div>
+
+<div class="container">
+    <p style="display:none;" id="free_quota_exhausted_info">Tägliches kostenloses Kontingent aufgebraucht. Besuchen Sie <a
+            href="{{ url_for('account.account') }}">/account</a>, um mehr Kontingent zu erhalten</p>
+</div>
+
+
+<section id="gallery" class="mb-3">
+    <div class="container" id="imagedata">
+        <div style="display:none;" class="mb-2" id="c3">
+            <h3>Hochauflösende vergrößerte Bilder:</h3>
+            <p>Bereit zum Download — Klicken Sie auf ein Bild, um es zu öffnen!<br>
+                Hinweis: Ihre Bilder werden vom Server gelöscht, nachdem Sie sie geöffnet haben, also stellen Sie sicher, dass Sie sie speichern!
+
+            <div class="d-flex checkbox-wrapper" style="align-items:center;">
+                <label class="form-check-label">Schneller Download ohne Vorschau aktivieren: </label>
+                <input id="quick_download_toggle" style="margin-left:10px;" type="checkbox" class="switch"
+                       onchange="reloadContent();">
+            </div>
+            </p>
+            <div class="gallery row" id="g3"></div>
+            <p><strong>Vergessen Sie nicht, unser Projekt mit Ihren Freunden und in sozialen Medien zu teilen 😊</strong></p>
+
+
+        </div>
+
+        <div style="display:none;" class="mb-2" id="c1">
+            <h3>Bilder, die derzeit vergrößert werden:</h3>
+            <p>
+                Die hochwertige Verarbeitung dauert nur wenige Sekunden. Ihre Datei wird bald fertig sein! Schauen Sie gerne in Kürze wieder vorbei! <br>Sie können auch unseren neuen <a
+                    href='https://discord.gg/utXujgAT8R'><strong>Discord</strong></a> besuchen oder sich die Zeit nehmen, mir auf
+                <a href='https://x.com/image_upscaling'><strong>Twitter</strong></a> zu folgen.
+            </p>
+            <div class="gallery row" id="g1"></div>
+        </div>
+
+        <div style="display:none;" class="mb-2" id="c2">
+            <h3>Bilder, die in der Warteschlange für hochwertige Vergrößerung stehen:</h3>
+            <p>
+                Hochwertige Vergrößerung braucht Zeit und andere Bilder werden derzeit verarbeitet. Schauen Sie in etwa 5
+                Minuten wieder vorbei - Sie müssen diesen Tab nicht offen lassen! <br>Sie können auch unseren neuen <a
+                    href='https://discord.gg/utXujgAT8R'><strong>Discord</strong></a> besuchen oder sich die Zeit nehmen, mir auf
+                <a href='https://x.com/image_upscaling'><strong>Twitter</strong></a> zu folgen.
+            </p>
+            <div class="gallery row" id="g2"></div>
+        </div>
+    </div>
+</section>
+
+<div class="container mt-3">
+    <div id="donation_div" style="display:none;">
+        <h3>Dieser Upscaler ist kostenlos, aber ihn zu betreiben ist es nicht.</h3>
+        <p>
+            Dieser Service läuft auf leistungsstarken Computer-Servern — Spenden helfen dabei, sie für alle am Laufen zu halten.
+        </p>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+            <input type="hidden" name="cmd" value="_donations">
+            <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
+            <input type="hidden" name="item_name"
+                   value="Das Ausführen von KI-Modellen erfordert leistungsstarke Computer. Ihre Unterstützung hilft dabei, die Kosten zu decken, um das Projekt am Laufen zu halten!">
+            <input type="hidden" name="currency_code" value="EUR">
+            <input type="hidden" name="no_shipping" value="1">
+            <input type="hidden" name="custom" value="{{ client_id }}">
+            <input TYPE="hidden" NAME="return" value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="cancel_return"
+                   value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="notify_url"
+                   value="{{ url_for('ipn.paypal_ipn', _external=True, _scheme='https') }}">
+            <input style="width:200px;" type="image" name="submit"
+                   src="{{ url_for('static', filename='assets/images/paypal-donate-button.png') }}"
+                   alt="Spenden">
+            <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+
+        </form>
+        <div class="line-segment"></div>
+    </div>
+</div>
+<div class="container mt-3">
+    <h2>Verbessern Sie Ihre Bilder mit KI-Skalierung</h2>
+    <p>Laden Sie ein Bild hoch, um es mit KI um das 4-fache zu skalieren! Bilder sind nur für Sie sichtbar und werden wenige
+        Minuten nach der Verarbeitung gelöscht. Sie können Bilder bis zu einer Größe von 16MPx hochladen, um sie auf 16k*16k zu skalieren. Beachten Sie, dass es bei hoher Nachfrage einige Minuten dauern kann, bis Ihre Bilder verarbeitet werden.</p>
+    <h2 id="keyfeatures">Hauptfunktionen</h2>
+    <ul>
+        <li>Beste Qualitätsergebnisse, besonders für Zeichnungen, KI-Kunst, Anime (im Grunde alles außer Gesichtern)</li>
+        <li>100% kostenlos für den kleineren Gebrauch — keine Paywall, keine Anmeldung. Ein tägliches kostenloses Kontingent gilt.</li>
+        <li><strong>Als APK für Android herunterladen</strong>: <a
+                href="https://play.google.com/store/apps/details?id=net.image_upscaling">hier</a></li>
+        <li>Unterstützt gängige Bildformate: PNG, JPG, WebP (animierte Formate wie GIF werden nicht unterstützt)</li>
+        <li>Unterstützung für große Bilder bis zu 4096*4096</li>
+        <li>Bild um das 4-fache mit KI skalieren</li>
+        <li>Unscharfe / pixelige Gesichter verbessern</li>
+        <li>Hinweis: <strong>Gesichter werden nicht immer ähnlich zu den Eingabebildern aussehen</strong></li>
+        <li>Unterstützt Bulk-Vergrößerung</li>
+        <li>Unterstützt transparente Bilder</li>
+        <li>Schnelle und benutzerfreundliche Oberfläche</li>
+    </ul>
+</div>
+
+<br>
+
+<section>
+    <div class="container">
+        <h2 id="howitworks">Wie es funktioniert</h2>
+        <p>Diese Website zu verwenden ist unglaublich einfach — und kostenlos:</p>
+        <ol>
+            <li><strong>Laden Sie Ihr Bild hoch:</strong> Wählen Sie ein Bild von Ihrem Gerät aus. Bitte beachten Sie, dass die Bildgröße
+                auf 16MPx begrenzt ist. <br>
+                <ul>
+                    <li>für 4x: Bilder bis zu 2MPx (2048*1024) können das Premium-Modell für bessere Ergebnisse verwenden.
+                    </li>
+                    <li>für 2x: Bilder bis zu 8MPx (2048*4096) können das Premium-Modell für bessere Ergebnisse verwenden.
+                    </li>
+                </ul>
+            </li>
+            <li><strong>Verarbeitung:</strong>
+                Der Server wird mit der Arbeit an Ihrem Bild beginnen. Dieser Prozess dauert normalerweise nur wenige Sekunden.
+                Ihr Bild wird gespeichert und steht zum Download bereit, sobald es fertig ist.
+                Dieser Algorithmus priorisiert <strong>Qualität über Geschwindigkeit</strong>, daher können größere Bilder länger dauern.
+            </li>
+
+
+            <li><strong>Laden Sie Ihr vergrößertes Bild herunter:</strong>
+                Kehren Sie nach ein paar Minuten zur Website zurück, und Ihr hochauflösendes
+                Bild wartet in der Galerie auf Sie!
+            </li>
+            <li><strong>Aufräumen:</strong> Ihre Bilder werden 30 Minuten nach der Verarbeitung gelöscht, um
+                Platz für neue Anfragen zu schaffen.
+            </li>
+
+        </ol>
+
+        <br>
+
+        <h2>Vergleichsbeispiel:</h2>
+        <div class="row">
+            <div class="col-12 col-md-8 col-lg-6">
+                <img src="{{ url_for('static', filename='assets/images/compare2.jpg') }}"
+                     alt="vergrößertes Bild Vorher-Nachher-Vergleich">
+            </div>
+        </div>
+
+
+        <p>Unglaublich — nicht wahr? Sie können das jetzt kostenlos hier ausprobieren!</p>
+        <a class="btn btn-primary btn-custom mt-0 rounded-sm p-1" href="#"
+           onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
+            Verbessern Sie Ihre Bilder!
+        </a>
+
+        <br>
+        <br>
+
+
+        <h2>KI-Vergrößerung vs. Traditionelle Skalierung</h2>
+        <h3 style="font-size: unset;">KI-Vergrößerung:</h3>
+        <ul>
+            <li><strong>Verbesserte Details:</strong> KI-Technologie analysiert und rekonstruiert feinere Details, was zu schärferen
+                und lebendigeren Bildern führt.
+            </li>
+            <li><strong>Erhaltene Qualität:</strong> Im Gegensatz zu traditionellen Methoden bewahrt KI-Vergrößerung die Integrität
+                des ursprünglichen Bildes und vermeidet Pixelierung und Unschärfe.
+            </li>
+        </ul>
+
+        <h3 style="font-size: unset;">Traditionelle Skalierung:</h3>
+        <ul>
+            <li><strong>Detailverlust:</strong> Standard-Skalierungsmethoden führen oft zu einem Verlust von Details, wodurch
+                Bilder unscharf und pixelig erscheinen.
+            </li>
+            <li><strong>Begrenzte Verbesserung:</strong> Traditionelle Techniken können keine neuen Details hinzufügen, was die
+                Qualitätsverbesserung begrenzt.
+            </li>
+        </ul>
+
+
+        <div class="line-segment"></div>
+
+
+        <div>
+            <h2>Datensicherheit und Urheberrecht</h2>
+            <ul>
+                <li>Ihre Bilder werden Ihnen über ein Cookie zugeordnet - eine zufällig generierte 32-stellige hexadezimale Zeichenfolge, die
+                    beim ersten Besuch der Seite erstellt wird. Nur mit diesem Cookie kann auf ein Bild zugegriffen werden.
+                </li>
+                <li>Ihre Bilder werden gespeichert, bis sie verarbeitet sind und ein paar zusätzliche Minuten, damit Sie sie
+                    herunterladen können.
+                </li>
+                <li>Ihre Bilder werden in keiner anderen Weise verwendet, außer vergrößert und kurzzeitig auf diesem Server gespeichert zu werden.
+                </li>
+                <li>Die Nutzung dieser Website gibt mir (dem Eigentümer) keine Rechte an Ihren Bildern - Sie sind weiterhin vollständiger
+                    Urheberrechtsinhaber.
+                </li>
+                <li>Die Bilder werden auf diesem Webserver in Deutschland gespeichert.</li>
+            </ul>
+        </div>
+    </div>
+    </div>
+</section>
+
+{% include 'footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='upscaling.js', v='2') }}"></script>
+<script src="{{ url_for('static', filename='show_notification.js', v='2') }}"></script>
+
+{% include 'gtag.html' %}
+</body>
+
+</html>

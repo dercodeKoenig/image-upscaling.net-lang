@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="{lang}">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}"
+          type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description"
+          content="Generate Audio from text online for free. High-quality results, easy-to-use, no subscriptions, no sign-up, no paywall.">
+
+    <meta name="og:title" content="Free Online Text to Speech"/>
+    <meta name="og:description" content="Generate Audio from text online with a single click - no sign ups required!"/>
+    <meta name="og:image" content="{{ url_for('static', filename='assets/images/tts_logo.webp', _external=True) }}"/>
+
+
+    <title>Free Text to Speech Generator</title>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Inter+Tight:100,200,300,400,500,600,700,800,900,100i,200i,300i,400i,500i,600i,700i,800i,900i&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .tts_audio_sample {
+            display: flex;
+        }
+
+        .tts_audio_sample p {
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-right: 1rem;
+        }
+
+        .input-box {
+            width: 100%;
+            min-height: 250px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+    </style>
+
+</head>
+<body>
+
+<script>
+    const str_download = "Download";
+    const str_status_processing = "Processing audio...";
+
+    const upload_url = "{{ url_for('tts.tts_submit') }}";
+    const get_data_url = "{{ url_for('tts.tts_get_data') }}";
+    const refresh_rate = "{{ refresh_rate }}";
+</script>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-tts").classList.add("active");
+</script>
+
+<main class="content pt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12 col-sm-12 col-md-12">
+                <textarea id="textInput" class="input-box" placeholder="Enter your text here..."
+                          maxlength="{{ maxlen }}"></textarea>
+            </div>
+            <div class="col-lg-12 col-sm-12 col-md-12">
+                <label for="speed">Speed:</label>
+                <input type="range" id="speed" name="speed" min="0.5" max="2" step="0.01" value="1"
+                       style="width: 200px;">
+                <span id="speedValue">1</span>
+
+                <script>
+                    // Display the selected value dynamically as the slider is moved
+                    const speedSlider = document.getElementById("speed");
+                    const speedValue = document.getElementById("speedValue");
+
+                    speedSlider.addEventListener("input", function () {
+                        speedValue.textContent = speedSlider.value;
+                    });
+                </script>
+
+                <br>
+
+                <label for="language">Select a Language:</label>
+                <select id="language" name="language" onchange="updateVoices()">
+                    <option value="a">American English</option>
+                    <option value="b">British English</option>
+                    <option value="j">Japanese</option>
+                    <option value="z">Mandarin Chinese</option>
+                    <option value="e">Spanish</option>
+                    <option value="f">French</option>
+                    <!--<option value="h">Hindi</option>-->
+                    <option value="i">Italian</option>
+                    <option value="p">Brazilian Portuguese</option>
+                </select>
+                <br>
+                <label for="names">Select a Voice:</label>
+                <select id="names" name="names">
+                    <!-- Options will be populated dynamically -->
+                </select>
+
+
+                <br>
+
+                <button class="btn btn-primary" onclick="sendText()">Send</button>
+
+                <button class="btn btn-primary" onclick="window.location.href='#examples'" style="margin-left: 20px;">
+                    examples
+                </button>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+
+<div class="container mb-3 mt-3">
+    <p style="display:none;" id="free_quota_exhausted_info">Daily free quota exhausted. Visit <a
+            href="{{ url_for('account.account') }}">/account</a> to get more quota</p>
+</div>
+
+<div id="results" class="container"></div>
+<br>
+
+<div class="container mb-3">
+    <div id="donation_div" style="display:none;">
+        <h3>This speech generator is free, but running it isn’t.</h3>
+        <p>
+            This service runs on powerful compute servers — donations help keep them running for everyone.
+        </p>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+            <input type="hidden" name="cmd" value="_donations">
+            <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
+            <input type="hidden" name="item_name"
+                   value="Running AI models requires powerful computers. Your support helps cover costs to keep the project running!">
+            <input type="hidden" name="currency_code" value="EUR">
+            <input type="hidden" name="no_shipping" value="1">
+            <input type="hidden" name="custom" value="{{ client_id }}">
+            <input TYPE="hidden" NAME="return" value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="cancel_return"
+                   value="{{ url_for('account.account', _external=True) }}">
+            <input TYPE="hidden" NAME="notify_url"
+                   value="{{ url_for('ipn.paypal_ipn', _external=True, _scheme='https') }}">
+            <input style="width:200px;" type="image" name="submit"
+                   src="{{ url_for('static', filename='assets/images/paypal-donate-button.png') }}"
+                   alt="Donate">
+            <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+
+        </form>
+        <div class="line-segment"></div>
+    </div>
+
+</div>
+
+
+<div class="container">
+    <h2>Convert Text to Speech with AI</h2>
+    <p>Ever wanted to convert text into high-quality, natural-sounding speech? This AI-powered text-to-speech generator
+        makes it easy. Whether you need narration for a video, an audiobook, or just want to hear your text spoken
+        aloud, this tool delivers stunning results. And the best part? It’s completely <strong>free</strong>, with
+        <strong>no sign-ups or paywalls</strong>!</p>
+
+    <h3>Key Features</h3>
+    <ul>
+        <li>✅ <strong>High-Quality AI Voices</strong> – Realistic and natural-sounding speech.</li>
+        <li>✅ <strong>100% Free</strong> for small-scale use — no paywall, no sign-up. A daily free quota applies.</li>
+        <li>✅ <strong>No Sign-Up Required</strong> – Just enter your text and generate speech instantly.</li>
+        <li>✅ <strong>Multiple Voices</strong> – Choose from a variety of voice styles.</li>
+        <li>✅ <strong>Text Limit: {{ maxlen }} Characters</strong> – You can convert up to {{ maxlen }} characters in a
+            single
+            request.
+        </li>
+        <li>✅ <strong>Fast & Easy to Use</strong> – Get audio output in seconds.</li>
+        <li>✅ <strong>Download Your Audio</strong> – Save your generated speech for offline use.</li>
+
+    </ul>
+
+    <br>
+
+    <h2>How It Works</h2>
+    <ol>
+        <li><strong>Enter Your Text:</strong> Type or paste any text you want to convert into speech. For best results,
+            use '.' , ',' and line breaks.
+        </li>
+        <li><strong>Stress:</strong> use [your_word](+/-1) or [your_word](+/-2). <strong>Example:</strong> Try 'how are
+            you?' and 'how [are](+2) you?'
+        </li>
+        <li><strong>Select a Voice:</strong> Choose from multiple AI-generated voices.
+        </li>
+        <li><strong>Generate & Listen:</strong> The AI processes your text and creates high-quality speech in seconds.
+        </li>
+        <li><strong>Download Your Audio:</strong> Save your speech file to use anywhere you need!
+        </li>
+    </ol>
+
+    <h2>Available Languages:</h2>
+    <ul>
+        <li>American English</li>
+        <li>British English</li>
+        <li>Japanese</li>
+        <li>Mandarin Chinese</li>
+        <li>Spanish</li>
+        <li>French</li>
+        <li>Italian</li>
+        <li>Brazilian Portuguese</li>
+    </ul>
+
+
+    <h2 id="examples">Examples</h2>
+    <p>Listen to different voices reading Part 1 of "The Great Cat Council":</p>
+
+    <div class="tts_audio_sample">
+        <p><strong>af_bella</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/af_bella.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>af_heart</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/af_heart.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>af_nicole</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/af_nicole.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>af_sarah</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/af_sarah.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>af_sky</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/af_sky.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>am_adam</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/am_adam.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>am_michael</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/am_michael.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>bf_emma</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/bf_emma.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>bf_isabella</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/bf_isabella.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>bf_lily</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/bf_lily.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>bm_george</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/bm_george.wav') }}"></audio>
+    </div>
+    <div class="tts_audio_sample">
+        <p><strong>bm_lewis</strong></p>
+        <audio controls src="{{ url_for('static', filename='assets/audio/bm_lewis.wav') }}"></audio>
+    </div>
+
+
+</div>
+
+
+{% include 'footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='tts.js') }}"></script>
+<script src="{{ url_for('static', filename='show_notification.js', v='1') }}"></script>
+
+{% include 'gtag.html' %}
+
+
+</body>
+
+</html>

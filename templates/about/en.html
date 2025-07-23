@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>About - Image-Upscaling.net</title>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
+
+
+    <style>
+        .aboutsection {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            padding: 20px;
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            border-radius: 8px;
+        }
+
+        h2, h1 {
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-about").classList.add("active");
+</script>
+
+<div class="container aboutsection">
+    <h2 class="mt-4">About</h2>
+
+    <p>Hey there! Welcome to <strong>Image-Upscaling.net</strong> — a place where you can easily upscale your images,
+        remove background from images and convert text to speech.</p>
+
+    <p>This is a small project that’s all about making AI-powered tools accessible for everyone
+        without complicated sign-ups or subscriptions. You can just jump right in and start using the tools you need,
+        totally for free.</p>
+
+    <p>Why Free? The project is funded by donations from folks like you, so we can keep everything running and available
+        for anyone who needs it.</p>
+
+    <p>And don’t worry about your privacy - anything you upload is secure, and deleted a few minutes after
+        processing.</p>
+
+    <p>Thanks for checking us out, and we hope you find something useful!</p>
+
+    <p>You can follow the project on <a href="https://x.com/image_upscaling" target="_blank">Twitter</a> or join us on
+        <a href="https://discord.gg/utXujgAT8R" target="_blank">Discord</a> if you need any help or have questions!</p>
+
+    <h3>What Makes Us Different?</h3>
+    <p>Yes, there are already services like this out there. So what sets us apart?</p>
+    <ul>
+        <li>✅ Like other sites, you get a daily free quota</li>
+
+        <li>✅ You can pay to get more quota - only if you want to</li>
+    </ul>
+    <p>But here’s what makes us better:</p>
+    <ul>
+        <li>🚫 No subscriptions - no worrying about recurring payments</li>
+
+        <li>⏳ Your balance never expires - no vanishing credits like in subscription models</li>
+
+        <li>💰 Fair pricing - for example, for 5€ you can process about 200 images</li>
+
+        <li>🆓 No paywalled features - everything is accessible within the free daily quota</li>
+
+        <li>🖼️ High quality results - not just our opinion, but something users consistently mention in reviews</li>
+
+    </ul>
+</div>
+
+<div class="container mt-5 aboutsection">
+    <h2 class="mb-4">Pricing</h2>
+    <div>
+        <h4>💡 Pricing Overview</h4>
+        <ul>
+            <li>Free quota per IP/day: <strong>{{ daily_quota }}€</strong></li>
+            <li>Text-to-speech (1000 characters): <strong>{{ tts_price_per_1000 }}€</strong></li>
+            <li>Image upscaling: <strong>{{ upscaling_price_min }} - {{ upscaling_price_max }}€</strong> (depends on
+                image size, +{{upscaling_fx_extra}}€ for face repair)
+            </li>
+            <li>Background removal: <strong>{{ removebg_price }}€</strong></li>
+        </ul>
+        <p>Donations unlock more quota and help keep everything running ❤️</p>
+
+        <h4>🎁 Discounts</h4>
+        <p>Supporters and high-usage users receive automatic discounts when their remaining balance exceeds the
+            following thresholds:</p>
+        <ul>
+            <li>Balance &gt; {{ discount_1_th }}€: <strong>{{ discount_1_percent }}% discount</strong></li>
+            <li>Balance &gt; {{ discount_2_th }}€: <strong>{{ discount_2_percent }}% discount</strong></li>
+            <li>Balance &gt; {{ discount_3_th }}€: <strong>{{ discount_3_percent }}% discount</strong></li>
+        </ul>
+        <p>Discounts also apply while using the daily free quota. Higher balances typically indicate verified users
+            and consistent usage, helping the system remain efficient and reliable for everyone.</p>
+        <p><strong>⚠️ Flux Editor is not covered by the free quota or discounts because of high operating
+            costs.</strong></p>
+    </div>
+</div>
+
+<div class="container mt-5 aboutsection">
+    <h2 class="mb-4">FAQ</h2>
+
+    <div class="mb-4">
+        <h5>Q: Is the API free to use?</h5>
+        <p>
+            Yes and no. It has the same free quota limits that you have on this website. You can make a donation to
+            claim extra quota <a href="{{url_for('account.account')}}">here</a>.
+        </p>
+    </div>
+
+    <div class="mb-4">
+        <h5>Q: My request is not being processed?</h5>
+        <p>
+            Sometimes there's a queue due to high demand since several tools share the same server. Usually, it works
+            after a few minutes. If it's still stuck after 10 minutes, something might be wrong (e.g., power failure,
+            server crash). Please report it via email or Discord.
+        </p>
+    </div>
+
+    <div class="mb-4">
+        <h5>Q: Why is my IP blocked?</h5>
+        <p>
+            Some IPs have been blocked due to abuse—typically from users attempting to bypass the free quota by using
+            multiple IPs or frequently switching API tokens. This often affects public proxies or shared networks.
+            <br>
+            If you believe your IP was flagged by mistake, try restarting your router to obtain a new IP. If the issue
+            continues, please wait 24 hours and try again.
+            <br>
+            To prevent abuse, only users who have previously donated (any amount) and still have a positive balance can
+            continue accessing the free quota from a flagged IP.
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="mt-4">Statistics</h2>
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h2 style="font-size:1.5rem;">Characters Processed</h2>
+                <canvas id="charsProcessedChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h2 style="font-size:1.5rem;">Megapixels Upscaled</h2>
+                <canvas id="pxUpscaledChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h2 style="font-size:1.5rem;">Megapixels bg-Removed</h2>
+                <canvas id="pxBgRemoveChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Data passed from Flask
+    // @formatter:off
+    const data = {
+      dates: {{ stats.dates|tojson }},
+      chars_processed: {{ stats.chars_processed|tojson }},
+      px_upscaled: {{ stats.px_upscaled|tojson }},
+      px_bg_remove: {{ stats.px_bg_remove|tojson }}
+    };
+    // @formatter:on
+
+
+    const megaPixelsUpscaled = data.px_upscaled.map(v => v / 1000000);
+    const megaPixelsBgRemoved = data.px_bg_remove.map(v => v / 1000000);
+
+    function createChart(chartId, label, values, labels) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {legend: {display: false}},
+                scales: {
+                    y: {beginAtZero: true},
+                    x: {
+                        ticks: {display: false},
+                        grid: {drawTicks: false}
+                    }
+                }
+            }
+        });
+    }
+
+    createChart('charsProcessedChart', 'Characters Processed', data.chars_processed, data.dates);
+    createChart('pxUpscaledChart', 'Megapixels Upscaled', megaPixelsUpscaled, data.dates);
+    createChart('pxBgRemoveChart', 'Megapixels bg-Removed', megaPixelsBgRemoved, data.dates);
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% include 'footer.html' %}
+{% include 'gtag.html' %}
+</body>
+</html>

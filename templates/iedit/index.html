@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"/>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <meta name="description"
+          content="Generate, stylize, and edit images with AI using natural language text prompts.">
+    <meta name="og:title" content="Flux Image Editor | AI-Powered Image Generation & Editing"/>
+    <meta name="og:description"
+          content="Generate, stylize, and edit images with AI using natural language text prompts.">
+    <meta name="og:image"
+          content="{{ url_for('static', filename='assets/images/logo.webp', _external=True) }}"/>
+
+    <title>Flux Image Editor | AI-Powered Image Generation & Editing</title>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_flux_editor.css', _external=True) }}">
+
+</head>
+<body class="m-0 p-0">
+
+<script>
+    const default_image_src = "{{ url_for('static', filename='assets/images/logo.webp') }}";
+    const upload_src = "{{ url_for('iedit.iedit_upload') }}";
+    const get_images_src = "{{ url_for('iedit.iedit_get_status') }}";
+    const download_image_src = "{{ url_for('iedit.iedit_download_data', req_id='') }}";
+    const submit_job_src = "{{ url_for('iedit.iedit_submit_job') }}";
+    const set_selected_url = "{{ url_for('iedit.iedit_set_selected') }}";
+    const get_account_info_url =  "{{ url_for('account.get_account_info') }}";
+
+    const price_dev = "{{price_dev/ 100}}";
+    const price_max = "{{price_max/ 100}}";
+    const price_pro = "{{price_pro/ 100}}";
+    const price_style = "{{price_style/ 100}}";
+    const price_inpaint = "{{price_inpaint/ 100}}";
+</script>
+
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-ieditor").classList.add("active");
+</script>
+
+<div class="container pt-5">
+    <div class="editor row pt-5 pb-5 flex-row-reverse">
+        <div class="col-12 col-md-6 text-center">
+            <div class="position-relative">
+                <a class="position-relative" id="imageOpenLink" target="_blank">
+                    <img id="imagePreview" src="{{ url_for('static', filename='assets/images/logo.webp') }}" alt=""/>
+                    <canvas id="drawCanvas" class="mask-canvas disabled position-absolute"
+                            style="top: 0; left: 0;"></canvas>
+                </a>
+
+                <div id="image-overlay" style="top:0;left:0;background: rgba(0,0,0,0.6);"
+                     class="overlay-text position-absolute w-100 h-100 d-flex align-items-center justify-content-center text-white">
+                    <span id="image-overlay-text" class="text-center px-2"></span>
+                </div>
+            </div>
+            <p id="imageStatusText" class="position-absolute text-center mt-1 mb-0 w-100"
+               style="bottom: 10px; left: 0; background: rgba(0,0,0,0.7); color: white; padding: 8px; margin: 0;"></p>
+        </div>
+
+        <div class="col-12 col-md-6 left-panel">
+
+            <div class="d-flex">
+                <button disabled id="devModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">dev</button>
+                <button id="proModeBtn" class="mode-select-btn active btn m-1 btn-outline-primary">pro</button>
+                <button id="maxModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">max</button>
+                <button disabled id="styleModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">style</button>
+                <button id="inPaintBtn" class="mode-select-btn btn m-1 btn-outline-primary">inpaint</button>
+
+            </div>
+
+            <textarea id="textPrompt" class="form-control" rows="3" placeholder="provide a detailed description of what is to be created or edited in the image"></textarea>
+            <select id="styleSelect" name="style" onchange="">
+                <option value="LEGO">LEGO</option>
+                <option value="Ghibli">Ghibli</option>
+            </select>
+
+            <div id="promptEnhance" class="form-check text-center">
+                <input class="form-check-input" type="checkbox" id="promptEnhanceCheckbox" name="promptEnhance">
+                <label class="form-check-label" for="promptEnhanceCheckbox">
+                    Auto enhance prompt
+                </label>
+            </div>
+
+            <div id="dev-settings" class="d-flex flex-column">
+                <label for="diffusionSteps" class="form-label mb-0">Diffusion Steps: <span
+                        id="stepsValue"></span></label>
+                <input
+                        type="range"
+                        class="form-range"
+                        id="diffusionSteps"
+                        min="1"
+                        max="50"
+                        value="28"
+                />
+                <label for="guidanceScale" class="form-label mb-0">guidance scale: <span id="guidanceScaleValue"></span></label>
+                <input
+                        type="range"
+                        class="form-range"
+                        id="guidanceScale"
+                        min="1"
+                        max="20"
+                        value="5"
+                />
+            </div>
+
+            <label class="form-label mb-0" id="aspectRatioSelectionLabel">Aspect Ratio:</label>
+            <div class="d-flex flex-wrap gap-1 mb-0" id="aspectRatioSelection">
+                <button class="m-1 btn btn-outline-secondary btn-sm aspect-ratio-btn d-flex align-items-center gap-1"
+                        data-ratio="1:1">
+                    <svg width="16" height="16" viewBox="0 0 16 16" class="ratio-icon">
+                        <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    1:1
+                </button>
+
+                <button class="m-1 btn btn-outline-secondary btn-sm aspect-ratio-btn d-flex align-items-center gap-1"
+                        data-ratio="3:4">
+                    <svg width="16" height="16" viewBox="0 0 16 16" class="ratio-icon">
+                        <rect x="3" y="1" width="10" height="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    3:4
+                </button>
+
+                <button class="m-1 btn btn-outline-secondary btn-sm aspect-ratio-btn d-flex align-items-center gap-1"
+                        data-ratio="4:3">
+                    <svg width="16" height="16" viewBox="0 0 16 16" class="ratio-icon">
+                        <rect x="1" y="3" width="14" height="10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    4:3
+                </button>
+
+                <button class="m-1 btn btn-outline-secondary btn-sm aspect-ratio-btn d-flex align-items-center gap-1"
+                        data-ratio="16:9">
+                    <svg width="16" height="16" viewBox="0 0 16 16" class="ratio-icon">
+                        <rect x="1" y="4" width="14" height="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    16:9
+                </button>
+
+                <button class="m-1 btn btn-outline-secondary btn-sm aspect-ratio-btn d-flex align-items-center gap-1"
+                        data-ratio="9:16">
+                    <svg width="16" height="16" viewBox="0 0 16 16" class="ratio-icon">
+                        <rect x="4" y="1" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    9:16
+                </button>
+            </div>
+
+
+            <button id="markAreaBtn" class="m-1 btn btn-dark">Mark area to edit</button>
+            <div class="d-flex">
+                    <button id="generateBtn" class="m-1 btn btn-primary">
+                        <span id="generate-text"></span> (<span
+                            id="generate-price"></span>€)
+                    </button>
+
+                    <button id="clearBtn" class="btn m-1 btn-danger">clear canvas</button>
+            </div>
+            <div class="d-flex">
+                <input type="file" id="uploadImage" name="image" style="display:none" accept="image/*"/>
+                <button id="uploadBtn" class="btn m-1 btn-success">Upload Image</button>
+                <button id="downloadBtn" class="btn m-1 btn-success">Download Result</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen Mask Overlay -->
+<div id="maskOverlay" class="mask-overlay">
+    <div class="mask-container">
+        <div class="mask-controls">
+            <div class="brush-control">
+                <label for="brushSizeSlider">Brush Size:</label>
+                <input type="range" id="brushSizeSlider" class="brush-size-slider" min="5" max="100" value="20"/>
+                <span id="brushSizeValue">20</span>
+            </div>
+            <div>
+                <button id="resetMaskBtn" class="m-1 reset-btn">Reset Mask</button>
+                <button id="closeMaskBtn" class="m-1 close-btn">Close</button>
+            </div>
+        </div>
+
+        <div class="image-container">
+            <img id="fullscreenImage" src="" alt=""/>
+            <canvas id="fullscreenCanvas" class="mask-canvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="gallery row" id="imagedata">
+
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col text-center">
+            <h1>Create & Edit Images with Flux</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col caption-text">
+            <span id="caption-text"></span>
+        </div>
+    </div>
+    <div class="row image-row mt-0">
+        <div class="col-12 col-md-6 mb-4">
+            <img id="img-before" class="fade-img" src="" alt="Before editing">
+        </div>
+        <div class="col-12 col-md-6">
+            <img id="img-after" class="fade-img" src="" alt="After editing">
+        </div>
+    </div>
+    <script>
+        const items = [
+            [
+                '"Change the cat\'s eye color to red and add flames at the bottom of the image"',
+                "{{ url_for('static', filename='assets/images/cat_before.png') }}",
+                "{{ url_for('static', filename='assets/images/cat_after.png') }}"
+            ],
+            [
+                "Edit Images with image-inpainting",
+                "{{ url_for('static', filename='assets/images/dragon.png') }}",
+                "{{ url_for('static', filename='assets/images/dragon_trophy.png') }}"
+            ],
+            [
+                "Supports a variety of generation styles including anime, realism, and more",
+                "{{ url_for('static', filename='assets/images/boy1.png') }}",
+                "{{ url_for('static', filename='assets/images/boy2.png') }}"
+            ],
+            [
+                "Generate book illustrations from text with consistent characters",
+                "{{ url_for('static', filename='assets/images/book_illustration_1.png') }}",
+                "{{ url_for('static', filename='assets/images/book_illustration_2.png') }}"
+            ]
+        ];
+
+        let index = Math.floor(Math.random() * items.length);
+        const fastInterval = 5000;
+        const slowInterval = 10000;
+
+        function updateContent() {
+            const [text, src1, src2] = items[index];
+            const caption = document.getElementById('caption-text');
+            const imgBefore = document.getElementById('img-before');
+            const imgAfter = document.getElementById('img-after');
+
+            // Fade out
+            imgBefore.classList.add('fade-out');
+            imgAfter.classList.add('fade-out');
+
+            setTimeout(() => {
+                // Change sources and caption after fade out
+                caption.textContent = text;
+                imgBefore.src = src1;
+                imgAfter.src = src2;
+
+                // Fade back in
+                imgBefore.classList.remove('fade-out');
+                imgAfter.classList.remove('fade-out');
+            }, 1000); // Match transition time
+
+            index = (index + 1) % items.length;
+        }
+
+        updateContent(); // Initial load
+
+        let cycles = 0;
+        const totalItems = items.length;
+
+        let intervalId = setInterval(() => {
+            updateContent();
+            cycles++;
+
+            if (cycles === totalItems) {
+                // Finished one full fast cycle, switch to slower interval
+                clearInterval(intervalId);
+                intervalId = setInterval(updateContent, slowInterval);
+            }
+        }, fastInterval);
+
+    </script>
+
+
+    <div class="row mt-4">
+        <div class="col">
+            <h3>✨ Key Features</h3>
+            <ul>
+                <li><strong>AI Image Generation</strong>: Generate high-quality images from text prompts using Flux's Pro, Max, and Dev models.</li>
+
+                <li><strong>Style-Based Rendering</strong>: Apply unique styles such as <em>Ghibli</em>, <em>LEGO</em>, and more to your images.</li>
+
+                <li><strong>Image Inpainting & Object Removal</strong>: Easily erase, replace, or refine parts of an image with AI precision.</li>
+
+                <li><strong>Image Upload & Editing</strong>: Enhance, redraw, or regenerate existing images using AI-powered tools.</li>
+
+                <li><strong>Custom Aspect Ratios</strong>: Choose between 1:1, 3:4, 4:3, 16:9, and 9:16 to fit your creative needs.</li>
+
+                <li><strong>Safe & Moderated</strong>: Built-in content moderation for all generations and inpainting with Pro and Max models.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col">
+            <h3>⚙️ How It Works</h3>
+            <p>The Flux editor offers multiple independent modes to create and edit images using AI:</p>
+            <ul>
+                <li><strong>Generation Modes (Dev, Pro, Max):</strong> Generate and edit high-quality images from text prompts with different model options tailored to your needs.</li>
+                <li><strong>Style Mode:</strong> Reimagine an existing image by applying various artistic styles like Ghibli or LEGO.</li>
+                <li><strong>Inpaint Mode:</strong> Precisely select and modify parts of an image with AI-powered inpainting tools.</li>
+            </ul>
+            <p>Simply pick the mode that fits your task, provide a prompt or upload an image if needed, and let the AI do the rest.</p>
+        </div>
+    </div>
+
+
+    <div class="row mt-4">
+        <div class="col">
+            <h3>💰 Pricing</h3>
+            <p>Flux Editor uses a transparent pay-per-generation model. No subscriptions. No hidden fees.<br>
+                You can add account balance at <a href="{{url_for('account.account')}}">/account</a></p>
+            <p>Your Balance: <span id="balanceinfo"></span></p>
+            <table class="table table-bordered w-auto">
+                <thead class="table-light">
+                <tr>
+                    <th>Mode</th>
+                    <th>Price per image</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Pro</td>
+                    <td>€{{ price_pro / 100 }}</td>
+                </tr>
+                <tr>
+                    <td>Max</td>
+                    <td>€{{ price_max / 100 }}</td>
+                </tr>
+                <tr>
+                    <td>Style</td>
+                    <td>€{{ price_style / 100 }}</td>
+                </tr>
+                <tr>
+                    <td>Inpaint</td>
+                    <td>€{{ price_inpaint / 100 }}</td>
+                </tr>
+                <tr>
+                    <td>Dev</td>
+                    <td>€{{ price_dev / 100 }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <small class="text-muted">Content moderation applies for Max and Pro models. Images are
+                saved temporarily for download.</small>
+        </div>
+    </div>
+</div>
+
+
+{% include 'footer.html' %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='iedit.js', v='21') }}"></script>
+<script src="{{ url_for('static', filename='show_notification.js', v='1') }}"></script>
+
+{% include 'gtag.html' %}
+
+</body>
+</html>

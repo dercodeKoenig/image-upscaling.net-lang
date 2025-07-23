@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Über uns - Image-Upscaling.net</title>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
+
+
+    <style>
+        .aboutsection {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            padding: 20px;
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            border-radius: 8px;
+        }
+
+        h2, h1 {
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-about").classList.add("active");
+</script>
+
+<div class="container aboutsection">
+    <h2 class="mt-4">Über uns</h2>
+
+    <p>Hallo und herzlich willkommen bei <strong>Image-Upscaling.net</strong> — dem Ort, wo Sie Ihre Bilder ganz einfach
+        hochskalieren,
+        Hintergründe aus Bildern entfernen und Text in Sprache umwandeln können.</p>
+
+    <p>Dies ist ein kleines Projekt, das darauf abzielt, KI-gestützte Tools für jeden zugänglich zu machen -
+        ohne komplizierte Anmeldungen oder Abonnements. Sie können sofort loslegen und die Tools nutzen, die Sie
+        brauchen,
+        völlig kostenlos.</p>
+
+    <p>Warum kostenlos? Das Projekt wird durch Spenden von Menschen wie Ihnen finanziert, damit wir alles am Laufen
+        halten
+        und für jeden verfügbar machen können, der es braucht.</p>
+
+    <p>Und keine Sorge um Ihre Privatsphäre - alles was Sie hochladen ist sicher und wird wenige Minuten nach der
+        Verarbeitung gelöscht.</p>
+
+    <p>Vielen Dank, dass Sie bei uns vorbeischauen, und wir hoffen, Sie finden etwas Nützliches!</p>
+
+    <p>Sie können dem Projekt auf <a href="https://x.com/image_upscaling" target="_blank">Twitter</a> folgen oder sich
+        unserem
+        <a href="https://discord.gg/utXujgAT8R" target="_blank">Discord</a> anschließen, falls Sie Hilfe benötigen oder
+        Fragen haben!</p>
+
+    <h3>Was macht uns anders?</h3>
+    <p>Ja, es gibt bereits ähnliche Dienste da draußen. Was zeichnet uns also aus?</p>
+    <ul>
+        <li>✅ Wie andere Seiten erhalten Sie ein tägliches kostenloses Kontingent</li>
+
+        <li>✅ Sie können zahlen, um mehr Kontingent zu erhalten - nur wenn Sie möchten</li>
+    </ul>
+    <p>Aber hier ist, was uns besser macht:</p>
+    <ul>
+        <li>🚫 Keine Abonnements - keine Sorgen über wiederkehrende Zahlungen</li>
+
+        <li>⏳ Ihr Guthaben läuft nie ab - keine verschwindenden Credits wie bei Abo-Modellen</li>
+
+        <li>💰 Faire Preise - zum Beispiel können Sie für 5€ etwa 200 Bilder verarbeiten</li>
+
+        <li>🆓 Keine kostenpflichtigen Features - alles ist im kostenlosen täglichen Kontingent zugänglich</li>
+
+        <li>🖼️ Hochwertige Ergebnisse - nicht nur unsere Meinung, sondern etwas, was Nutzer durchgehend in Bewertungen
+            erwähnen
+        </li>
+
+    </ul>
+</div>
+
+<div class="container mt-5 aboutsection">
+    <h2 class="mb-4">Preise</h2>
+    <div>
+        <h4>💡 Preisübersicht</h4>
+        <ul>
+            <li>Kostenloses Kontingent pro IP/Tag: <strong>{{ daily_quota }}€</strong></li>
+            <li>Text-zu-Sprache (1000 Zeichen): <strong>{{ tts_price_per_1000 }}€</strong></li>
+            <li>Bild-Hochskalierung: <strong>{{ upscaling_price_min }} - {{ upscaling_price_max }}€</strong> (abhängig
+                von Bildgröße, +{{upscaling_fx_extra}}€ für Gesichtsreparatur)
+            </li>
+            <li>Hintergrund-Entfernung: <strong>{{ removebg_price }}€</strong></li>
+        </ul>
+        <p>Spenden schalten mehr Kontingent frei und helfen dabei, alles am Laufen zu halten ❤️</p>
+
+        <h4>🎁 Rabatte</h4>
+        <p>Unterstützer und Vielnutzer erhalten automatische Rabatte, wenn ihr verbleibendes Guthaben die
+            folgenden Schwellenwerte überschreitet:</p>
+        <ul>
+            <li>Guthaben &gt; {{ discount_1_th }}€: <strong>{{ discount_1_percent }}% Rabatt</strong></li>
+            <li>Guthaben &gt; {{ discount_2_th }}€: <strong>{{ discount_2_percent }}% Rabatt</strong></li>
+            <li>Guthaben &gt; {{ discount_3_th }}€: <strong>{{ discount_3_percent }}% Rabatt</strong></li>
+        </ul>
+        <p>Rabatte gelten auch bei der Nutzung des täglichen kostenlosen Kontingents. Höhere Guthaben zeigen
+            typischerweise
+            verifizierte Nutzer und konsistente Nutzung an, was hilft, das System effizient und zuverlässig für alle zu
+            halten.</p>
+        <p><strong>⚠️ Flux Editor ist nicht vom kostenlosen Kontingent oder Rabatten abgedeckt aufgrund hoher
+            Betriebskosten.</strong></p>
+    </div>
+</div>
+
+<div class="container mt-5 aboutsection">
+    <h2 class="mb-4">Häufig gestellte Fragen</h2>
+
+    <div class="mb-4">
+        <h5>F: Ist die API kostenlos nutzbar?</h5>
+        <p>
+            Ja und nein. Sie hat dieselben kostenlosen Kontingent-Limits, die Sie auch auf dieser Website haben. Sie
+            können eine Spende machen, um zusätzliches Kontingent zu erhalten <a href="{{url_for('account.account')}}">hier</a>.
+        </p>
+    </div>
+
+    <div class="mb-4">
+        <h5>F: Meine Anfrage wird nicht verarbeitet?</h5>
+        <p>
+            Manchmal gibt es eine Warteschlange aufgrund hoher Nachfrage, da mehrere Tools denselben Server teilen.
+            Normalerweise funktioniert es nach ein paar Minuten. Falls es nach 10 Minuten immer noch hängt, könnte etwas
+            nicht stimmen (z.B. Stromausfall, Server-Absturz). Bitte melden Sie es per E-Mail oder Discord.
+        </p>
+    </div>
+
+    <div class="mb-4">
+        <h5>F: Warum ist meine IP blockiert?</h5>
+        <p>
+            Einige IPs wurden aufgrund von Missbrauch blockiert - typischerweise von Nutzern, die versuchen, das
+            kostenlose Kontingent zu umgehen, indem sie mehrere IPs verwenden oder häufig API-Token wechseln. Dies
+            betrifft oft öffentliche Proxies oder geteilte Netzwerke.
+            <br>
+            Falls Sie glauben, dass Ihre IP fälschlicherweise markiert wurde, versuchen Sie Ihren Router neu zu starten,
+            um eine neue IP zu erhalten. Falls das Problem weiterhin besteht, warten Sie bitte 24 Stunden und versuchen
+            Sie es erneut.
+            <br>
+            Um Missbrauch zu verhindern, können nur Nutzer, die zuvor gespendet haben (beliebiger Betrag) und noch ein
+            positives Guthaben haben, weiterhin das kostenlose Kontingent von einer markierten IP aus nutzen.
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="mt-4">Statistiken</h2>
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h2 style="font-size:1.5rem;">Verarbeitete Zeichen</h2>
+                <canvas id="charsProcessedChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h2 style="font-size:1.5rem;">Hochskalierte Megapixel</h2>
+                <canvas id="pxUpscaledChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h2 style="font-size:1.5rem;">Megapixel Hintergrund-Entfernt</h2>
+                <canvas id="pxBgRemoveChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Daten von Flask übergeben
+    // @formatter:off
+    const data = {
+        dates: {{ stats.dates|tojson }},
+        chars_processed: {{ stats.chars_processed|tojson }},
+        px_upscaled: {{ stats.px_upscaled|tojson }},
+        px_bg_remove: {{ stats.px_bg_remove|tojson }}
+    };
+    // @formatter:on
+
+    const megaPixelsUpscaled = data.px_upscaled.map(v => v / 1000000);
+    const megaPixelsBgRemoved = data.px_bg_remove.map(v => v / 1000000);
+
+    function createChart(chartId, label, values, labels) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {legend: {display: false}},
+                scales: {
+                    y: {beginAtZero: true},
+                    x: {
+                        ticks: {display: false},
+                        grid: {drawTicks: false}
+                    }
+                }
+            }
+        });
+    }
+
+    createChart('charsProcessedChart', 'Verarbeitete Zeichen', data.chars_processed, data.dates);
+    createChart('pxUpscaledChart', 'Hochskalierte Megapixel', megaPixelsUpscaled, data.dates);
+    createChart('pxBgRemoveChart', 'Megapixel Hintergrund-Entfernt', megaPixelsBgRemoved, data.dates);
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% include 'footer.html' %}
+{% include 'gtag.html' %}
+</body>
+</html>

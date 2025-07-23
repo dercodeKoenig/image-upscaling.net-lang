@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image-Upscaling.net API Documentation</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          line-height: 1.6;
+        }
+        code {
+          background: #f4f4f4;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-size: 1.1em;
+        }
+        pre {
+          background: #f4f4f4;
+          padding: 10px;
+          border-radius: 4px;
+          overflow-x: auto;
+        }
+        h1, h2, h3 {
+          color: #333;
+        }
+    </style>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
+
+    <!-- Highlight.js CSS -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+
+    <!-- Highlight.js JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+
+</head>
+<body>
+
+{% include 'navbar.html' %}
+
+<script>
+    document.getElementById("nav-api").classList.add("active");
+</script>
+
+<div class="container pt-3">
+
+    <h1>Image-Upscaling.net API Documentation</h1>
+    <p>This page describes how to interact with the <strong>Image Upscaling</strong>, <strong>Background
+        Removal</strong>, and <strong>Text-to-Speech</strong> APIs. The following Python code samples demonstrate how to
+        use these endpoints.</p>
+    <p>You can copy this code right into your program and test it out (but change the client id). The daily free quota
+        applies to all requests. You can run this code as a notebook <a
+                href="https://github.com/dercodeKoenig/image-upscaling.net_API/blob/main/image_upscaling_api.ipynb"
+                target="_blank">here</a>.</p>
+
+    <h2>1. Setup</h2>
+    First we need a sample image. I highly recommend you use your own sample image because many people submitting the
+    byte-perfect same image could be seen as suspicious and could lead to a ban of your ip.
+    <pre><code class="language-python">!wget https://image-upscaling.net/assets/images/test_image.jpg</code></pre>
+    <br>
+    The client id always should be included in the headers. This is how you identify yourself. You have to use 32
+    digits, allowed are: 0-9, a-z, A-Z.<br>
+    Only when downloading results you can also specify the client id as get parameter (?client_id=76..42)
+    <pre><code class="language-python">import requests
+import json
+
+serverurl = "https://image-upscaling.net"
+client_id = "1234567890asdfghjklqwertzUIOPYXC"
+cookies = { "client_id": client_id }</code></pre>
+
+    <h2>2. Upscaling API</h2>
+    <h3>Upload an image</h3>
+    You specify the target scale (1,2,3,4) and whether you want to use the face repair mode or not. Face repair is
+    slower and costs a little more, so only use it if you need it.
+    <pre><code class="language-python">use_face_enhance = False
+scale = 4
+path = "test_image.jpg"
+
+url = "/".join([serverurl, "upscaling_upload"])
+data = {"scale": scale}
+if use_face_enhance:
+    data["fx"] = ""
+
+files = {"image": open(path, "rb")}
+response = requests.post(url, data=data, files=files, cookies=cookies)
+print(response.text)</code></pre>
+
+    <h3>Get status</h3>
+    All 3 APIs have an endpoint to query the processing status. They will provide you with the download urls.
+    <pre><code class="language-python">url = "/".join([serverurl, "upscaling_get_status"])
+response = requests.get(url, cookies=cookies)
+print(response.json())</code></pre>
+
+    <h3>Download processed files</h3>
+    A good way to download all your result files is to query the processing status and download all images that are
+    marked as processed.<br>
+    When using ?delete_after_download the server will automatically delete your file after you downloaded it. You can
+    repeat this until there are no more files left.
+    <pre><code class="language-python">while True:
+    url = "/".join([serverurl, "upscaling_get_status"])
+    response = requests.get(url, cookies=cookies).json()
+
+    for url in response["processed"]:
+        filename = url.split("/")[-1]
+        params = {"delete_after_download": ""}
+        content = requests.get(url, cookies=cookies, params=params).content
+        with open(filename, "wb") as f:
+            f.write(content)
+
+    if not response["pending"] and not response["processing"] and not response["processed"]:
+        break
+    else:
+        import time
+        time.sleep(1)</code></pre>
+
+    <h2>3. Background Removal API</h2>
+    This API is almost the same as the upscaling API, it just has different endpoints and no extra data when uploading a
+    file.
+    <h3>Upload an image</h3>
+    <pre><code class="language-python">url = "/".join([serverurl, "removebg_upload"])
+files = {"image": open("test_image.jpg", "rb")}
+response = requests.post(url, files=files, cookies=cookies)
+print(response.text)</code></pre>
+
+    <h3>Download results</h3>
+    <pre><code class="language-python">while True:
+    url = "/".join([serverurl, "removebg_get_status"])
+    response = requests.get(url, cookies=cookies).json()
+
+    for url in response["processed"]:
+        filename = url.split("/")[-1]
+        params = {"delete_after_download": ""}
+        content = requests.get(url, cookies=cookies, params=params).content
+        with open(filename, "wb") as f:
+            f.write(content)
+
+    if not response["pending"] and not response["processing"] and not response["processed"]:
+        break
+    else:
+        import time
+        time.sleep(1)</code></pre>
+
+    <h2>4. Text-to-Speech API</h2>
+    <h3>Submit text</h3>
+    You need to specify:
+    <ul>
+        <li>the text you want to process (note that there is a 60k character limit for every request)</li>
+        <li>the speed you want as float</li>
+        <li>the voice you want (you can find the voices on the main tts page on the website)</li>
+    </ul>
+
+    <pre><code class="language-python">url = "/".join([serverurl, "tts_submit"])
+data = {
+    "text": "This is the text to speech api",
+    "voice": "am_michael",
+    "speed": 1.1
+}
+response = requests.post(url, json=data, cookies=cookies)
+print(response.text)</code></pre>
+
+    <h3>Download results</h3>
+    This endpoint returns a list of your requests with a download link for the mp3 files. Your file is ready when
+    "result" is not empty.
+    <pre><code class="language-python">while True:
+    url = "/".join([serverurl, "tts_get_data"])
+    response = requests.get(url, cookies=cookies).json()
+
+    for element in response:
+        url = element["result"]
+        if url != "":
+            print(url)
+            params = {"delete_after_download": ""}
+            content = requests.get(url, params=params, cookies=cookies).content
+            with open(url.split("/")[-1] + ".mp3", "wb") as f:
+                f.write(content)
+
+    if not response:
+        break
+    else:
+        import time
+        time.sleep(1)</code></pre>
+
+
+    <h2>5. Account info</h2>
+    Use this endpoint to get information on your account.
+    <pre><code class="language-python">url = "/".join([serverurl, "get_account_info"])
+response = requests.get(url, cookies=cookies).json()
+print(response)
+# {'balance': 0, 'client_id': '1234567890asdfghjklqwertzUIOPYXC', 'email': '', 'ip': '34.68.107.124', 'quota_free': 100, 'quota_used': 0}
+  </code></pre>
+
+    <h2>6. Bonus: change client id in browser</h2>
+    If you want to change client id in browser, you can use
+    <pre>/account?client_id=xxxxx</pre>
+    with a valid client id and it will make the browser switch to the given client id.<br>
+    The image-upscaling.net app uses this feature.
+
+</div>
+{% include 'footer.html' %}
+{% include 'gtag.html' %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

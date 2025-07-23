@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konto</title>
+</head>
+<body>
+
+{% include 'navbar.html' %}
+<script>
+    document.getElementById("nav-account").classList.add("active");
+</script>
+
+<div class="container">
+    <h1 class="mt-1 mb-1">Konto</h1>
+    <div class="row">
+        <div class="col">
+            <strong>{{ link_response }}</strong>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <p><strong>Email:</strong> <span id="email_display">Lade...</span></p>
+            <p><strong>Client ID:</strong> <span id="client_id_display">Lade...</span></p>
+            <p><strong>Guthaben:</strong> <span id="balance_display">Lade...</span></p>
+            <p><strong>Kontingent (Verbraucht / Frei):</strong> <span id="free_quota_display">Lade...</span></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <p>
+                Dieser Dienst ist für alle kostenlos, mit einem täglichen Anfrage-Limit, um einen fairen Zugang und eine
+                ausgewogene Nutzung der Rechenressourcen zu gewährleisten.
+            </p>
+            <p><strong>Benötigen Sie mehr Kontingent?</strong><br>
+                Unterstützen Sie den Dienst mit einer Spende — Sie erhalten zusätzliches Kontingent basierend auf dem
+                Betrag nach Abzug der Gebühren.<br>
+                (PayPal und Stripe behalten einen kleinen Teil jeder Transaktion ein).
+            </p>
+
+            <p><strong>So funktioniert es:</strong><br>
+                Ihr freies Kontingent wird täglich zurückgesetzt. Bezahltes Kontingent wird nur verwendet, wenn das
+                freie Kontingent aufgebraucht ist.<br>
+                Informationen zu Preisen, Rabatten und freiem Kontingent finden Sie <a href="{{ url_for('about') }}">hier</a>.
+            </p>
+
+            <p><strong>Unterstützte Zahlungsmethoden:</strong><br>
+                Paypal<br>
+                Stripe (Kreditkarte)
+            </p>
+
+            <div class="row">
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                        <input type="hidden" name="cmd" value="_donations">
+                        <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
+                        <input type="hidden" name="item_name"
+                               value="Für den Betrieb von KI-Modellen sind leistungsstarke Computer notwendig. Ihre Unterstützung hilft, die laufenden Kosten zu decken!">
+                        <input type="hidden" name="currency_code" value="EUR">
+                        <input type="hidden" name="no_shipping" value="1">
+                        <input type="hidden" name="custom" value="{{ client_id }}">
+                        <input TYPE="hidden" NAME="return" value="{{ url_for('account.account', _external=True) }}">
+                        <input TYPE="hidden" NAME="cancel_return"
+                               value="{{ url_for('account.account', _external=True) }}">
+                        <input TYPE="hidden" NAME="notify_url"
+                               value="{{ url_for('ipn.paypal_ipn', _external=True, _scheme='https') }}">
+                        <input style="width:200px;" type="image" name="submit"
+                               src="{{ url_for('static', filename='assets/images/paypal-donate-button.png') }}"
+                               alt="Spenden">
+                        <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
+                    </form>
+                </div>
+                <div class="col-md-3 col-sm-6 col-xs-12">
+                    <form action="{{ url_for('account.stripe_pre_payment') }}" method="get" style="display: inline;">
+                        <button type="submit" class="btn btn-dark">Über Stripe spenden</button>
+                    </form>
+                </div>
+            </div>
+            <br>
+            <p>
+                Spenden werden in der Regel innerhalb einer Minute automatisch verarbeitet und mit Ihrem Konto verknüpft
+                — Sie müssen nichts weiter tun.<br>
+                Sie erhalten eine Bestätigungs-E-Mail mit einem Login-Link, den Sie verwenden können, falls Sie einmal
+                ausgeloggt werden.<br>
+                Wenn Ihre E-Mail-Adresse zuvor mit einer anderen Client-ID verknüpft war, müssen Sie aus
+                Sicherheitsgründen den Link in der Bestätigungs-E-Mail oder das untenstehende Formular verwenden, um
+                Ihre E-Mail erneut zu verbinden.
+            </p>
+            <br>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <strong>Verbinden Sie Ihre E-Mail</strong><br>
+            <p id="email_connect_info_text"></p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('account.send_verification_mail') }}">
+        <div class="row">
+            <div class="col-9">
+                <input name="email" required type="email" placeholder="E-Mail eingeben" style="width:100%">
+            </div>
+            <div class="col-3">
+                <input type="submit" value="Senden">
+            </div>
+        </div>
+    </form>
+</div>
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+{% include 'footer.html' %}
+{% include 'gtag.html' %}
+
+<script>
+    async function fetchAccountInfo() {
+        try {
+            const response = await fetch("{{ url_for('account.get_account_info') }}");
+            if (!response.ok) throw new Error('Netzwerkantwort war nicht in Ordnung');
+            const data = await response.json();
+
+            document.getElementById('client_id_display').innerHTML = data.client_id || 'N/V';
+
+            document.getElementById('email_display').innerHTML = data.email || 'Keine E-Mail verbunden';
+
+            const email_connect_info_text = document.getElementById('email_connect_info_text');
+            if (data.email) {
+                email_connect_info_text.innerHTML = 'Eine E-Mail-Adresse ist bereits mit Ihrem Konto verbunden. Dieses Formular ist wahrscheinlich nicht erforderlich.';
+            } else {
+                email_connect_info_text.innerHTML = 'Derzeit ist keine E-Mail-Adresse mit Ihrem Konto verbunden.';
+            }
+
+            document.getElementById('balance_display').innerHTML = data.balance || 0;
+
+            const maxFree = data.quota_free;
+            const quotaUsed = data.quota_used;
+            document.getElementById('free_quota_display').innerHTML = quotaUsed + ' / ' + maxFree;
+        } catch (err) {
+            console.error('Fehler beim Abrufen der Kontoinformationen:', err);
+        }
+    }
+
+    // Erste Datenabfrage
+    fetchAccountInfo();
+    // Periodisches Update
+    setInterval(fetchAccountInfo, parseInt("{{info_refresh_rate}}"));
+</script>
+
+</body>
+</html>

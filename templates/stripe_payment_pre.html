@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Donate with Stripe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
+
+  </head>
+  <body>
+  {% include 'navbar.html' %}
+    <div class="container" style="max-width: 400px; margin: 100px auto; font-family: sans-serif;">
+      <h2>{{account_stripe_add_balance_title}}</h2>
+      <form id="donation-form" action="stripe_payment">
+        <label for="amount">{{account_stripe_add_balance_text}}</label><br />
+        <input
+          type="number"
+          id="amount"
+          name="amount"
+          min="1"
+          required
+          step="0.01"
+          value="5"
+          style="width: 100%; padding: 8px; margin-top: 5px;"
+        /><br /><br />
+        <button type="submit" style="width: 100%; padding: 10px;">{{account_stripe_add_balance_btn}}</button>
+      </form>
+    </div>
+  </body>
+</html>

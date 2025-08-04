@@ -50,13 +50,13 @@
 
 
             <p><strong>Formas de pagamento:</strong><br>
-                &middot; Paypal<br>
+                &middot; PayPal (Observação: doações abaixo de € 0,40 podem ser consumidas pelas taxas do PayPal)<br>
                 &middot; Stripe (cartão de crédito)
             </p>
 
 
             <div class="row">
-                <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="col-md-4 col-sm-6 col-xs-12">
                     <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                         <input type="hidden" name="cmd" value="_donations">
                         <input type="hidden" name="business" value="imageupscaling.net@gmail.com">
@@ -76,7 +76,7 @@
                         <img alt="" width="1" height="1" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif">
                     </form>
                 </div>
-                <div class="col-md-3 col-sm-6 col-xs-12">
+                <div class="col-md-4 col-sm-6 col-xs-12">
                     <form action="{{ url_for('account.stripe_pre_payment') }}" method="get" style="display: inline;">
                         <button type="submit" class="btn btn-dark">Doar via Stripe
                         </button>

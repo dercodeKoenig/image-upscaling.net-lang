@@ -28,7 +28,7 @@ Marvin Eckhardt
 🌐 https://image-upscaling.net
 """
 
-upscaling_image_upload_response = "Bild wird mit dem Faktor {scale} hochskaliert"
+#upscaling_image_upload_response = "Bild wird mit dem Faktor {scale} hochskaliert"
 removebg_image_upload_response = "Bild wird verarbeitet"
 image_too_large = "Bild ist zu groß"
 image_invalid = "Ungültige oder nicht unterstützte Bilddatei"

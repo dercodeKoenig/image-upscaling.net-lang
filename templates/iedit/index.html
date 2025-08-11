@@ -19,8 +19,8 @@
     <title>Flux Image Editor | AI-Powered Image Generation & Editing</title>
 
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', _external=True) }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style_flux_editor.css', _external=True) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_flux_editor.css', v='2') }}">
 
 </head>
 <body class="m-0 p-0">
@@ -33,6 +33,7 @@
     const submit_job_src = "{{ url_for('iedit.iedit_submit_job') }}";
     const set_selected_url = "{{ url_for('iedit.iedit_set_selected') }}";
     const get_account_info_url =  "{{ url_for('account.get_account_info') }}";
+    const style_images_path= "{{ url_for('static', filename='assets/images/styles/') }}";
 
     const price_dev = "{{price_dev/ 100}}";
     const price_max = "{{price_max/ 100}}";
@@ -69,19 +70,29 @@
         <div class="col-12 col-md-6 left-panel">
 
             <div class="d-flex">
-                <button disabled id="devModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">dev</button>
+                <button id="devModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">dev</button>
                 <button id="proModeBtn" class="mode-select-btn active btn m-1 btn-outline-primary">pro</button>
                 <button id="maxModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">max</button>
-                <button disabled id="styleModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">style</button>
+                <button id="styleModeBtn" class="mode-select-btn btn m-1 btn-outline-primary">style</button>
                 <button id="inPaintBtn" class="mode-select-btn btn m-1 btn-outline-primary">inpaint</button>
 
             </div>
 
-            <textarea id="textPrompt" class="form-control" rows="3" placeholder="provide a detailed description of what is to be created or edited in the image"></textarea>
-            <select id="styleSelect" name="style" onchange="">
-                <option value="LEGO">LEGO</option>
-                <option value="Ghibli">Ghibli</option>
-            </select>
+
+<div class="custom-select" id="styleSelect">
+  <div class="select-selected">
+    <img src="images/Ghibli.png" alt="Ghibli preview" />
+    <span>Ghibli</span>
+  </div>
+  <div class="select-items">
+    <!-- Items will be populated by JS -->
+  </div>
+</div>
+
+
+
+                        <textarea id="textPrompt" class="form-control" rows="3" placeholder="provide a detailed description of what is to be created or edited in the image"></textarea>
+
 
             <div id="promptEnhance" class="form-check text-center">
                 <input class="form-check-input" type="checkbox" id="promptEnhanceCheckbox" name="promptEnhance">
@@ -98,7 +109,7 @@
                         class="form-range"
                         id="diffusionSteps"
                         min="1"
-                        max="50"
+                        max="40"
                         value="28"
                 />
                 <label for="guidanceScale" class="form-label mb-0">guidance scale: <span id="guidanceScaleValue"></span></label>
@@ -106,9 +117,10 @@
                         type="range"
                         class="form-range"
                         id="guidanceScale"
-                        min="1"
+                        min="0"
                         max="20"
                         value="5"
+                        step="0.2"
                 />
             </div>
 
@@ -159,8 +171,8 @@
             <button id="markAreaBtn" class="m-1 btn btn-dark">Mark area to edit</button>
             <div class="d-flex">
                     <button id="generateBtn" class="m-1 btn btn-primary">
-                        <span id="generate-text"></span> (<span
-                            id="generate-price"></span>€)
+                        <span id="generate-text"></span>
+                        (<span id="generate-price"></span>)
                     </button>
 
                     <button id="clearBtn" class="btn m-1 btn-danger">clear canvas</button>
@@ -306,7 +318,7 @@
 
                 <li><strong>Custom Aspect Ratios</strong>: Choose between 1:1, 3:4, 4:3, 16:9, and 9:16 to fit your creative needs.</li>
 
-                <li><strong>Safe & Moderated</strong>: Built-in content moderation for all generations and inpainting with Pro and Max models.</li>
+                <li><strong>Safe & Moderated</strong>: Built-in content moderation for all generations with Pro and Max models and inpainting.</li>
             </ul>
         </div>
     </div>
@@ -349,7 +361,7 @@
                 </tr>
                 <tr>
                     <td>Style</td>
-                    <td>€{{ price_style / 100 }}</td>
+                    <td>€{{ price_style / 100 }} (free quota applies)</td>
                 </tr>
                 <tr>
                     <td>Inpaint</td>
@@ -357,7 +369,7 @@
                 </tr>
                 <tr>
                     <td>Dev</td>
-                    <td>€{{ price_dev / 100 }}</td>
+                    <td>€{{ price_dev / 100 }} (free quota applies)</td>
                 </tr>
                 </tbody>
             </table>
@@ -372,8 +384,8 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='iedit.js', v='21') }}"></script>
-<script src="{{ url_for('static', filename='show_notification.js', v='1') }}"></script>
+<script src="{{ url_for('static', filename='iedit.js', v='22') }}"></script>
+<script src="{{ url_for('static', filename='show_notification.js', v='2') }}"></script>
 
 {% include 'gtag.html' %}
 
